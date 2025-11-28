@@ -4,6 +4,7 @@ import type { DailyActivity, DivingAnalysis } from '@/types/chat'
 import dayjs from 'dayjs'
 import { LineChart } from '@/components/charts'
 import type { LineChartData } from '@/components/charts'
+import LoadingState from '@/components/UI/LoadingState.vue'
 
 interface TimeFilter {
   startTs?: number
@@ -156,14 +157,10 @@ watch(
     <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <h3 class="font-semibold text-gray-900 dark:text-white">🤿 潜水排名</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          按最后发言时间排序，最久没发言的在前面
-        </p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">按最后发言时间排序，最久没发言的在前面</p>
       </div>
 
-      <div v-if="isLoadingDiving" class="px-5 py-8 text-center text-sm text-gray-400">
-        正在统计潜水数据...
-      </div>
+      <LoadingState v-if="isLoadingDiving" text="正在统计潜水数据..." />
 
       <div
         v-else-if="divingAnalysis && divingAnalysis.rank.length > 0"

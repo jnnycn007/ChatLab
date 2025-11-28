@@ -68,15 +68,50 @@ export const useChatStore = defineStore(
       try {
         // 开始导入
         isImporting.value = true
+
+        // 初始化状态
         importProgress.value = {
           stage: 'reading',
           progress: 0,
-          message: '准备导入...',
+          message: '',
+        }
+
+        // 进度队列控制
+        const queue: ImportProgress[] = []
+        let isProcessing = false
+        let currentStage = 'reading'
+        let lastStageTime = Date.now()
+        const MIN_STAGE_TIME = 1000 // 每个阶段至少展示1秒
+
+        const processQueue = async () => {
+          if (isProcessing) return
+          isProcessing = true
+
+          while (queue.length > 0) {
+            const next = queue[0]
+
+            // 如果阶段发生变化，确保上一阶段展示了足够时间
+            if (next.stage !== currentStage) {
+              const elapsed = Date.now() - lastStageTime
+              if (elapsed < MIN_STAGE_TIME) {
+                await new Promise((resolve) => setTimeout(resolve, MIN_STAGE_TIME - elapsed))
+              }
+              currentStage = next.stage
+              lastStageTime = Date.now()
+            }
+
+            // 更新状态
+            importProgress.value = queue.shift()!
+          }
+          isProcessing = false
         }
 
         // 监听导入进度
         const unsubscribe = window.chatApi.onImportProgress((progress) => {
-          importProgress.value = progress
+          // 跳过完成状态，直接跳转
+          if (progress.stage === 'done') return
+          queue.push(progress)
+          processQueue()
         })
 
         // 执行导入
@@ -84,6 +119,25 @@ export const useChatStore = defineStore(
 
         // 取消监听
         unsubscribe()
+
+        // 等待队列处理完成
+        while (queue.length > 0 || isProcessing) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+
+        // 确保最后一个阶段也展示足够时间
+        const elapsed = Date.now() - lastStageTime
+        if (elapsed < MIN_STAGE_TIME) {
+          await new Promise((resolve) => setTimeout(resolve, MIN_STAGE_TIME - elapsed))
+        }
+
+        // 确保进度条走完
+        if (importProgress.value) {
+          importProgress.value.progress = 100
+        }
+
+        // 给一点时间展示 100%
+        await new Promise((resolve) => setTimeout(resolve, 300))
 
         if (importResult.success && importResult.sessionId) {
           // 刷新会话列表
@@ -101,7 +155,7 @@ export const useChatStore = defineStore(
         // 延迟清除进度，让用户看到完成状态
         setTimeout(() => {
           importProgress.value = null
-        }, 1500)
+        }, 500)
       }
     }
 
@@ -143,6 +197,13 @@ export const useChatStore = defineStore(
       currentSessionId.value = null
     }
 
+    // 侧边栏状态
+    const isSidebarCollapsed = ref(false)
+
+    function toggleSidebar() {
+      isSidebarCollapsed.value = !isSidebarCollapsed.value
+    }
+
     return {
       // State
       sessions,
@@ -150,6 +211,7 @@ export const useChatStore = defineStore(
       isImporting,
       importProgress,
       isInitialized,
+      isSidebarCollapsed,
       // Computed
       currentSession,
       // Actions
@@ -159,13 +221,14 @@ export const useChatStore = defineStore(
       selectSession,
       deleteSession,
       clearSelection,
+      toggleSidebar,
     }
   },
   {
     persist: {
       // 使用 sessionStorage：页面刷新时保留，应用重启时清除
       // 这样启动应用默认显示 WelcomeGuide，但刷新页面保留当前状态
-      pick: ['currentSessionId'],
+      pick: ['currentSessionId', 'isSidebarCollapsed'],
       storage: sessionStorage,
     },
   }

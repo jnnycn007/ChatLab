@@ -2,6 +2,7 @@
 import { useChatStore } from '@/stores/chat'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const chatStore = useChatStore()
 const { isImporting, importProgress } = storeToRefs(chatStore)
@@ -36,11 +37,15 @@ const features = [
   },
 ]
 
+const router = useRouter()
+
 async function handleImport() {
   importError.value = null
   const result = await chatStore.importFile()
   if (!result.success && result.error && result.error !== '未选择文件') {
     importError.value = result.error
+  } else if (result.success && chatStore.currentSessionId) {
+    router.push({ name: 'chat', params: { id: chatStore.currentSessionId } })
   }
 }
 
@@ -88,6 +93,8 @@ async function handleDrop(e: DragEvent) {
   const result = await chatStore.importFileFromPath(filePath)
   if (!result.success && result.error) {
     importError.value = result.error
+  } else if (result.success && chatStore.currentSessionId) {
+    router.push({ name: 'chat', params: { id: chatStore.currentSessionId } })
   }
 }
 
@@ -100,15 +107,15 @@ function getProgressText(): string {
   if (!importProgress.value) return ''
   switch (importProgress.value.stage) {
     case 'reading':
-      return '读取文件中...'
+      return '正在读取中...'
     case 'parsing':
-      return '解析聊天记录...'
+      return '解析器解析中...'
     case 'saving':
-      return '保存数据...'
+      return '写入本地数据库中...'
     case 'done':
-      return '导入完成！'
+      return '导入完成'
     case 'error':
-      return '导入失败'
+      return '导入中断'
     default:
       return ''
   }
@@ -121,13 +128,6 @@ function getProgressText(): string {
     <div class="relative z-10 flex h-full w-full flex-col items-center justify-center px-4">
       <!-- Hero Section -->
       <div class="mb-12 text-center">
-        <div
-          class="mb-6 inline-flex items-center justify-center rounded-3xl bg-white p-4 shadow-lg shadow-pink-100 ring-1 ring-gray-100 dark:bg-gray-900 dark:shadow-pink-900/20 dark:ring-gray-800"
-          :class="[isImporting ? '' : 'animate-bounce']"
-        >
-          <UIcon v-if="!isImporting" name="i-heroicons-sparkles" class="h-8 w-8 text-pink-500" />
-          <UIcon v-else name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-pink-500" />
-        </div>
         <h1
           class="mb-4 bg-linear-to-r from-pink-600 via-pink-500 to-rose-400 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-6xl"
         >
@@ -186,7 +186,7 @@ function getProgressText(): string {
               <!-- 导入中显示进度 -->
               <p class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ getProgressText() }}</p>
               <div class="mx-auto w-full max-w-md">
-                <UProgress :value="importProgress.progress" size="md" color="pink" />
+                <UProgress v-model="importProgress.progress" size="md" />
               </div>
               <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
                 {{ importProgress.message }}

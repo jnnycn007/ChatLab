@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { MemberActivity, MemberNameHistory, RepeatAnalysis, CatchphraseAnalysis, DragonKingAnalysis, MonologueAnalysis } from '@/types/chat'
+import type {
+  MemberActivity,
+  MemberNameHistory,
+  RepeatAnalysis,
+  CatchphraseAnalysis,
+  DragonKingAnalysis,
+  MonologueAnalysis,
+} from '@/types/chat'
 import { RankListPro, BarChart, ListPro } from '@/components/charts'
 import type { RankItem, BarChartData } from '@/components/charts'
+import LoadingState from '@/components/UI/LoadingState.vue'
 
 interface TimeFilter {
   startTs?: number
@@ -289,12 +297,7 @@ function formatPeriod(startTs: number, endTs: number | null): string {
     <RankListPro :members="memberRankData" title="成员活跃度排行" />
 
     <!-- 龙王排名 -->
-    <div
-      v-if="isLoadingDragonKing"
-      class="rounded-xl border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-400 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-    >
-      正在统计龙王数据...
-    </div>
+    <LoadingState v-if="isLoadingDragonKing" text="正在统计龙王数据..." />
     <RankListPro
       v-else-if="dragonKingRankData.length > 0"
       :members="dragonKingRankData"
@@ -307,14 +310,10 @@ function formatPeriod(startTs: number, endTs: number | null): string {
     <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
       <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <h3 class="font-semibold text-gray-900 dark:text-white">🎤 自言自语榜</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          连续发言 ≥3 条（间隔 ≤5 分钟）统计
-        </p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">连续发言 ≥3 条（间隔 ≤5 分钟）统计</p>
       </div>
 
-      <div v-if="isLoadingMonologue" class="px-5 py-8 text-center text-sm text-gray-400">
-        正在统计自言自语数据...
-      </div>
+      <LoadingState v-if="isLoadingMonologue" text="正在统计自言自语数据..." />
 
       <template v-else-if="monologueAnalysis && monologueAnalysis.rank.length > 0">
         <!-- 最高纪录卡片 -->
@@ -498,7 +497,7 @@ function formatPeriod(startTs: number, endTs: number | null): string {
         该群组所有成员均未修改过昵称
       </div>
 
-      <div v-else class="px-5 py-8 text-center text-sm text-gray-400">正在加载昵称变更记录...</div>
+      <LoadingState v-else text="正在加载昵称变更记录..." />
     </div>
 
     <!-- 复读分析模块 -->
@@ -537,7 +536,7 @@ function formatPeriod(startTs: number, endTs: number | null): string {
         </div>
       </div>
 
-      <div v-if="isLoadingRepeat" class="px-5 py-8 text-center text-sm text-gray-400">正在分析复读数据...</div>
+      <LoadingState v-if="isLoadingRepeat" text="正在分析复读数据..." />
 
       <div v-else-if="repeatAnalysis && repeatAnalysis.totalRepeatChains > 0" class="space-y-6 p-5">
         <!-- 复读链长度分布 & 最火复读内容 -->
@@ -630,12 +629,7 @@ function formatPeriod(startTs: number, endTs: number | null): string {
     </div>
 
     <!-- 口头禅分析模块 -->
-    <div
-      v-if="isLoadingCatchphrase"
-      class="rounded-xl border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-400 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-    >
-      正在分析口头禅数据...
-    </div>
+    <LoadingState v-if="isLoadingCatchphrase" text="正在分析口头禅数据..." />
 
     <ListPro
       v-else-if="catchphraseAnalysis && catchphraseAnalysis.members.length > 0"

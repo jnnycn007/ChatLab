@@ -27,7 +27,7 @@ const timeRange = ref<{ start: number; end: number } | null>(null)
 // 年份筛选
 const availableYears = ref<number[]>([])
 const selectedYear = ref<number>(0) // 0 表示全部
-const isInitialLoad = ref(false) // 用于跳过初始加载时的 watch 触发
+const isInitialLoad = ref(true) // 用于跳过初始加载时的 watch 触发，并控制首屏加载状态
 
 // Tab 配置
 const tabs = [
@@ -186,8 +186,8 @@ onMounted(() => {
 <template>
   <div class="flex h-full flex-col bg-gray-50 dark:bg-gray-950">
     <!-- Loading State -->
-    <div v-if="isLoading && !session" class="flex h-full items-center justify-center">
-      <div class="text-center">
+    <div v-if="isInitialLoad" class="flex h-full items-center justify-center">
+      <div class="flex flex-col items-center justify-center text-center">
         <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-pink-500" />
         <p class="mt-2 text-sm text-gray-500">加载分析数据...</p>
       </div>
@@ -250,22 +250,12 @@ onMounted(() => {
 
       <!-- Tab Content -->
       <div class="relative flex-1 overflow-y-auto">
-        <!-- Loading Overlay - 完全覆盖内容区 -->
-        <div
-          v-if="isLoading"
-          class="absolute inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-gray-950"
-        >
-          <div class="text-center">
-            <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-pink-500" />
-            <p class="mt-3 text-sm font-medium text-gray-600 dark:text-gray-400">加载中...</p>
-          </div>
-        </div>
-
         <!-- Content with padding -->
         <div class="p-6">
-          <Transition name="fade" mode="out-in">
+          <Transition name="tab-slide" mode="out-in">
             <OverviewTab
               v-if="activeTab === 'overview'"
+              :key="'overview-' + selectedYear"
               :session="session"
               :member-activity="memberActivity"
               :top-members="topMembers"
@@ -279,18 +269,21 @@ onMounted(() => {
             />
             <MembersTab
               v-else-if="activeTab === 'members'"
+              :key="'members-' + selectedYear"
               :session-id="currentSessionId!"
               :member-activity="memberActivity"
               :time-filter="timeFilter"
             />
             <TimeTab
               v-else-if="activeTab === 'time'"
+              :key="'time-' + selectedYear"
               :session-id="currentSessionId!"
               :hourly-activity="hourlyActivity"
               :time-filter="timeFilter"
             />
             <TimelineTab
               v-else-if="activeTab === 'timeline'"
+              :key="'timeline-' + selectedYear"
               :session-id="currentSessionId!"
               :daily-activity="dailyActivity"
               :time-range="timeRange"
@@ -309,13 +302,20 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s ease;
+.tab-slide-enter-active,
+.tab-slide-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.tab-slide-enter-from {
   opacity: 0;
+  transform: translateY(10px);
+}
+
+.tab-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

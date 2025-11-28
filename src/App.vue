@@ -9,6 +9,10 @@ const chatStore = useChatStore()
 const { isInitialized } = storeToRefs(chatStore)
 const route = useRoute()
 
+const tooltip = {
+  delayDuration: 100,
+}
+
 // 应用启动时从数据库加载会话列表
 onMounted(async () => {
   await chatStore.loadSessions()
@@ -16,11 +20,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UApp>
+  <UApp :tooltip="tooltip">
     <div class="flex h-screen w-full overflow-hidden bg-white dark:bg-gray-950">
       <template v-if="!isInitialized">
         <div class="flex h-full w-full items-center justify-center">
-          <div class="text-center">
+          <div class="flex flex-col items-center justify-center text-center">
             <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-pink-500" />
             <p class="mt-2 text-sm text-gray-500">加载中...</p>
           </div>
