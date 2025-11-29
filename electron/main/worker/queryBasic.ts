@@ -6,14 +6,7 @@
 import Database from 'better-sqlite3'
 import * as fs from 'fs'
 import * as path from 'path'
-import {
-  openDatabase,
-  getDbDir,
-  getDbPath,
-  buildTimeFilter,
-  buildSystemMessageFilter,
-  type TimeFilter,
-} from './dbCore'
+import { openDatabase, getDbDir, getDbPath, buildTimeFilter, buildSystemMessageFilter, type TimeFilter } from './dbCore'
 
 // ==================== 基础查询 ====================
 
@@ -199,6 +192,43 @@ export function getWeekdayActivity(sessionId: string, filter?: TimeFilter): any[
 }
 
 /**
+ * 获取月份活跃度分布
+ */
+export function getMonthlyActivity(sessionId: string, filter?: TimeFilter): any[] {
+  const db = openDatabase(sessionId)
+  if (!db) return []
+
+  const { clause, params } = buildTimeFilter(filter)
+  const clauseWithSystem = buildSystemMessageFilter(clause)
+
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        CAST(strftime('%m', msg.ts, 'unixepoch', 'localtime') AS INTEGER) as month,
+        COUNT(*) as messageCount
+      FROM message msg
+      JOIN member m ON msg.sender_id = m.id
+      ${clauseWithSystem}
+      GROUP BY month
+      ORDER BY month
+    `
+    )
+    .all(...params) as Array<{ month: number; messageCount: number }>
+
+  const result: any[] = []
+  for (let m = 1; m <= 12; m++) {
+    const found = rows.find((r) => r.month === m)
+    result.push({
+      month: m,
+      messageCount: found ? found.messageCount : 0,
+    })
+  }
+
+  return result
+}
+
+/**
  * 获取消息类型分布
  */
 export function getMessageTypeDistribution(sessionId: string, filter?: TimeFilter): any[] {
@@ -250,10 +280,7 @@ export function getTimeRange(sessionId: string): { start: number; end: number } 
 /**
  * 获取成员的历史昵称记录
  */
-export function getMemberNameHistory(
-  sessionId: string,
-  memberId: number
-): any[] {
+export function getMemberNameHistory(sessionId: string, memberId: number): any[] {
   const db = openDatabase(sessionId)
   if (!db) return []
 
@@ -386,4 +413,3 @@ export function getSession(sessionId: string): any | null {
     dbPath: getDbPath(sessionId),
   }
 }
-

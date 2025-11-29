@@ -345,6 +345,21 @@ const mainIpcMain = (win: BrowserWindow) => {
   )
 
   /**
+   * 获取月份活跃度分布
+   */
+  ipcMain.handle(
+    'chat:getMonthlyActivity',
+    async (_, sessionId: string, filter?: { startTs?: number; endTs?: number }) => {
+      try {
+        return await worker.getMonthlyActivity(sessionId, filter)
+      } catch (error) {
+        console.error('获取月份活跃度失败：', error)
+        return []
+      }
+    }
+  )
+
+  /**
    * 获取消息类型分布
    */
   ipcMain.handle(

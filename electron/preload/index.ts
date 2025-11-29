@@ -7,6 +7,7 @@ import type {
   HourlyActivity,
   DailyActivity,
   WeekdayActivity,
+  MonthlyActivity,
   MessageType,
   ImportProgress,
   RepeatAnalysis,
@@ -126,6 +127,16 @@ const chatApi = {
     filter?: { startTs?: number; endTs?: number }
   ): Promise<WeekdayActivity[]> => {
     return ipcRenderer.invoke('chat:getWeekdayActivity', sessionId, filter)
+  },
+
+  /**
+   * 获取月份活跃度分布
+   */
+  getMonthlyActivity: (
+    sessionId: string,
+    filter?: { startTs?: number; endTs?: number }
+  ): Promise<MonthlyActivity[]> => {
+    return ipcRenderer.invoke('chat:getMonthlyActivity', sessionId, filter)
   },
 
   /**

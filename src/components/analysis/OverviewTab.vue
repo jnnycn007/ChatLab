@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { AnalysisSession, MemberActivity, HourlyActivity, MessageType, WeekdayActivity } from '@/types/chat'
+import type {
+  AnalysisSession,
+  MemberActivity,
+  HourlyActivity,
+  MessageType,
+  WeekdayActivity,
+  MonthlyActivity,
+} from '@/types/chat'
 import { getMessageTypeName } from '@/types/chat'
 import { DoughnutChart, ProgressBar, BarChart } from '@/components/charts'
 import type { DoughnutChartData, BarChartData } from '@/components/charts'
@@ -48,6 +55,26 @@ const typeChartData = computed<DoughnutChartData>(() => {
   }
 })
 
+// 成员水群分布图表数据
+const memberChartData = computed<DoughnutChartData>(() => {
+  const sortedMembers = [...props.memberActivity].sort((a, b) => b.messageCount - a.messageCount)
+  const top10 = sortedMembers.slice(0, 10)
+  const othersCount = sortedMembers.slice(10).reduce((sum, m) => sum + m.messageCount, 0)
+
+  const labels = top10.map((m) => m.name)
+  const values = top10.map((m) => m.messageCount)
+
+  if (othersCount > 0) {
+    labels.push('其他人')
+    values.push(othersCount)
+  }
+
+  return {
+    labels,
+    values,
+  }
+})
+
 // 最活跃时段
 const peakHour = computed(() => {
   if (!props.hourlyActivity.length) return null
@@ -74,6 +101,10 @@ const dailyAvgMessages = computed(() => {
 const weekdayActivity = ref<WeekdayActivity[]>([])
 const isLoadingWeekday = ref(false)
 
+// 月份活跃度数据
+const monthlyActivity = ref<MonthlyActivity[]>([])
+const isLoadingMonthly = ref(false)
+
 // 星期名称映射（周一开始）
 const weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
@@ -90,11 +121,25 @@ async function loadWeekdayActivity() {
   }
 }
 
+// 加载月份活跃度数据
+async function loadMonthlyActivity() {
+  if (!props.session.id) return
+  isLoadingMonthly.value = true
+  try {
+    monthlyActivity.value = await window.chatApi.getMonthlyActivity(props.session.id, props.timeFilter)
+  } catch (error) {
+    console.error('加载月份活跃度失败:', error)
+  } finally {
+    isLoadingMonthly.value = false
+  }
+}
+
 // 监听 session.id 和 timeFilter 变化
 watch(
   () => [props.session.id, props.timeFilter],
   () => {
     loadWeekdayActivity()
+    loadMonthlyActivity()
   },
   { immediate: true, deep: true }
 )
@@ -112,6 +157,14 @@ const weekdayChartData = computed<BarChartData>(() => {
   return {
     labels: weekdayActivity.value.map((w) => weekdayNames[w.weekday - 1]),
     values: weekdayActivity.value.map((w) => w.messageCount),
+  }
+})
+
+// 月份分布图数据
+const monthlyChartData = computed<BarChartData>(() => {
+  return {
+    labels: monthlyActivity.value.map((m) => `${m.month}月`),
+    values: monthlyActivity.value.map((m) => m.messageCount),
   }
 })
 
@@ -210,16 +263,7 @@ function getRankBadge(index: number): string {
     </div>
 
     <!-- 关键指标卡片 -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <!-- 龙王 -->
-      <StatCard label="龙王" :value="topMembers[0]?.name || '-'" icon="🏆" icon-bg="amber">
-        <template #subtext>
-          <span class="text-2xl font-bold text-amber-500">{{ topMembers[0]?.messageCount || 0 }}</span>
-          <span class="text-sm text-gray-500">条</span>
-          <span class="ml-2 text-sm text-gray-400">({{ topMembers[0]?.percentage || 0 }}%)</span>
-        </template>
-      </StatCard>
-
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <!-- 日均消息 -->
       <StatCard label="日均消息" :value="`${dailyAvgMessages} 条`" icon="📊" icon-bg="blue">
         <template #subtext>
@@ -255,8 +299,25 @@ function getRankBadge(index: number): string {
       </StatCard>
     </div>
 
-    <!-- 24小时 & 星期分布 -->
+    <!-- 图表区域：消息类型 & 成员分布 -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- 消息类型分布 -->
+      <SectionCard title="消息类型分布" :show-divider="false">
+        <div class="p-5">
+          <DoughnutChart :data="typeChartData" :height="256" />
+        </div>
+      </SectionCard>
+
+      <!-- 成员水群分布 -->
+      <SectionCard title="成员水群分布" :show-divider="false">
+        <div class="p-5">
+          <DoughnutChart :data="memberChartData" :height="256" />
+        </div>
+      </SectionCard>
+    </div>
+
+    <!-- 24小时 & 星期分布 & 月份分布 -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
       <!-- 24小时分布 -->
       <SectionCard title="24小时活跃分布" :show-divider="false">
         <div class="p-5">
@@ -335,34 +396,14 @@ function getRankBadge(index: number): string {
           </div>
         </div>
       </SectionCard>
-    </div>
 
-    <!-- 图表区域 -->
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- 消息类型分布 -->
-      <SectionCard title="消息类型分布" :show-divider="false">
+      <!-- 月份活跃分布 -->
+      <SectionCard title="月份活跃分布" :show-divider="false">
         <div class="p-5">
-          <DoughnutChart :data="typeChartData" :height="256" />
-        </div>
-      </SectionCard>
-
-      <!-- Top 成员预览 -->
-      <SectionCard title="活跃榜 Top 5" :show-divider="false">
-        <div class="space-y-3 p-5">
-          <div
-            v-for="(member, index) in memberActivity.slice(0, 5)"
-            :key="member.memberId"
-            class="flex items-center gap-3"
-          >
-            <span class="w-6 text-center text-lg">{{ getRankBadge(index) }}</span>
-            <div class="flex-1">
-              <div class="flex items-center justify-between">
-                <span class="font-medium text-gray-900 dark:text-white">{{ member.name }}</span>
-                <span class="text-sm text-gray-500">{{ member.messageCount }}</span>
-              </div>
-              <ProgressBar :percentage="member.percentage" color="from-pink-400 to-pink-600" />
-            </div>
+          <div v-if="isLoadingMonthly" class="flex h-64 items-center justify-center">
+            <UIcon name="i-heroicons-arrow-path" class="h-6 w-6 animate-spin text-pink-500" />
           </div>
+          <BarChart v-else :data="monthlyChartData" :height="256" />
         </div>
       </SectionCard>
     </div>

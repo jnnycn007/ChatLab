@@ -163,6 +163,14 @@ export interface WeekdayActivity {
   messageCount: number
 }
 
+/**
+ * 月份活跃度统计
+ */
+export interface MonthlyActivity {
+  month: number // 1-12
+  messageCount: number
+}
+
 // ==================== 夜猫分析类型 ====================
 
 /**
