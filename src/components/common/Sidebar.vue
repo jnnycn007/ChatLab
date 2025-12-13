@@ -122,6 +122,19 @@ function getSessionRouteName(session: AnalysisSession): string {
 function isPrivateChat(session: AnalysisSession): boolean {
   return session.type === 'private'
 }
+
+// 获取会话头像显示文字：私聊取最后两字，群聊取前两字
+function getSessionAvatarText(session: AnalysisSession): string {
+  const name = session.name || ''
+  if (!name) return '?'
+  if (isPrivateChat(session)) {
+    // 私聊：取最后两个字
+    return name.length <= 2 ? name : name.slice(-2)
+  } else {
+    // 群聊：取前两个字
+    return name.length <= 2 ? name : name.slice(0, 2)
+  }
+}
 </script>
 
 <template>
@@ -187,14 +200,14 @@ function isPrivateChat(session: AnalysisSession): boolean {
       <div class="h-full overflow-y-auto px-3">
         <div v-if="sessions.length === 0 && !isCollapsed" class="py-8 text-center text-sm text-gray-500">暂无记录</div>
 
-        <div class="space-y-1">
+        <div class="space-y-1 pb-8">
           <!-- Session List Header - Sticky -->
           <UTooltip
             v-if="!isCollapsed && sessions.length > 0"
             text="右键可删除或重命名聊天记录"
             :popper="{ placement: 'right' }"
           >
-            <div class="sticky top-0 bg-gray-50 dark:bg-gray-900 mb-4 px-2 flex items-center gap-1">
+            <div class="sticky top-0 bg-gray-50 dark:bg-gray-900 mb-4 px-2 flex items-center gap-1 z-1">
               <div class="text-sm font-medium text-gray-500">聊天记录</div>
               <UIcon name="i-heroicons-question-mark-circle" class="size-3.5 text-gray-400" />
             </div>
@@ -219,7 +232,7 @@ function isPrivateChat(session: AnalysisSession): boolean {
               >
                 <!-- Platform Icon / Text Avatar - 私聊和群聊使用不同样式 -->
                 <div
-                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
                   :class="[
                     route.params.id === session.id
                       ? isPrivateChat(session)
@@ -231,8 +244,16 @@ function isPrivateChat(session: AnalysisSession): boolean {
                     isCollapsed ? '' : 'mr-3',
                   ]"
                 >
-                  <!-- 私聊和群聊都显示名字首字母 -->
-                  {{ session.name ? session.name.charAt(0) : '?' }}
+                  <!-- 折叠时显示缩略名字，不折叠时显示图标 -->
+                  <template v-if="isCollapsed">
+                    {{ getSessionAvatarText(session) }}
+                  </template>
+                  <template v-else>
+                    <UIcon
+                      :name="isPrivateChat(session) ? 'i-heroicons-user' : 'i-heroicons-chat-bubble-left-right'"
+                      class="h-4 w-4"
+                    />
+                  </template>
                 </div>
 
                 <!-- Session Info -->

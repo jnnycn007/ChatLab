@@ -18,11 +18,7 @@ const { isSidebarCollapsed: isCollapsed } = storeToRefs(chatStore)
           color="gray"
           variant="ghost"
         >
-          <UIcon
-            name="i-heroicons-chat-bubble-left-right"
-            class="h-5 w-5 shrink-0"
-            :class="[isCollapsed ? '' : 'mr-2']"
-          />
+          <UIcon name="i-heroicons-information-circle" class="h-5 w-5 shrink-0" :class="[isCollapsed ? '' : 'mr-2']" />
           <span v-if="!isCollapsed" class="truncate">反馈和更新</span>
         </UButton>
       </UTooltip>
