@@ -3,7 +3,6 @@ import { FileDropZone } from '@/components/UI'
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import ImportTutorialModal from './components/ImportTutorialModal.vue'
 import AgreementModal from './components/AgreementModal.vue'
 import { useSessionStore } from '@/stores/session'
 
@@ -11,7 +10,6 @@ const sessionStore = useSessionStore()
 const { isImporting, importProgress } = storeToRefs(sessionStore)
 
 const importError = ref<string | null>(null)
-const showTutorialModal = ref(false)
 
 const features = [
   {
@@ -79,7 +77,7 @@ async function handleFileDrop({ paths }: { files: File[]; paths: string[] }) {
 }
 
 function openTutorial() {
-  showTutorialModal.value = true
+  window.open('https://chatlab.fun/usage/how-to-export.html', '_blank')
 }
 
 function getProgressText(): string {
@@ -249,9 +247,6 @@ function getProgressDetail(): string {
         </div>
       </div>
     </div>
-
-    <!-- 导入教程弹窗 -->
-    <ImportTutorialModal v-model:open="showTutorialModal" />
 
     <!-- 用户协议弹窗 -->
     <AgreementModal />
