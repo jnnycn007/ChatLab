@@ -1,7 +1,7 @@
 import { createI18n } from 'vue-i18n'
 import zhCN from './locales/zh-CN'
 import enUS from './locales/en-US'
-import { defaultLocale, detectSystemLocale, type LocaleType } from './types'
+import { detectSystemLocale, type LocaleType } from './types'
 
 // 导出类型
 export type { LocaleType } from './types'
@@ -72,4 +72,3 @@ export function getLocale(): LocaleType {
 }
 
 export default i18n
-
