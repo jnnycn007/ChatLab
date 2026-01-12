@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLayoutStore } from '@/stores/layout'
 import AISettingsTab from './settings/AISettingsTab.vue'
 import BasicSettingsTab from './settings/BasicSettingsTab.vue'
 import StorageTab from './settings/StorageTab.vue'
@@ -8,6 +9,13 @@ import AboutTab from './settings/AboutTab.vue'
 import SubTabs from '@/components/UI/SubTabs.vue'
 
 const { t } = useI18n()
+const layoutStore = useLayoutStore()
+
+// 可滚动 Tab 的通用接口（支持 section 跳转的 Tab 需实现此接口）
+interface ScrollableTab {
+  scrollToSection?: (sectionId: string) => void
+  refresh?: () => void
+}
 
 // Props
 const props = defineProps<{
@@ -29,10 +37,16 @@ const tabs = computed(() => [
 ])
 
 const activeTab = ref('settings')
-// Template refs - used via ref="xxx" in template
-const storageTabRef = ref<InstanceType<typeof StorageTab> | null>(null)
-// Ensure refs are tracked for vue-tsc
-void storageTabRef
+
+// 统一的 Tab 引用管理（通过 setTabRef 动态设置）
+const tabRefs = ref<Record<string, ScrollableTab | null>>({})
+
+/**
+ * 设置 Tab 引用（在模板中通过 :ref 调用）
+ */
+function setTabRef(tabId: string, el: unknown) {
+  tabRefs.value[tabId] = el as ScrollableTab | null
+}
 
 // AI 配置变更回调
 function handleAIConfigChanged() {
@@ -42,16 +56,35 @@ function handleAIConfigChanged() {
 // 关闭弹窗
 function closeModal() {
   emit('update:open', false)
+  layoutStore.clearSettingTarget()
 }
 
 // 监听打开状态
 watch(
   () => props.open,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
-      activeTab.value = 'settings' // 默认打开基础设置 Tab
-      // 刷新存储管理（如果需要的话，或者在切换到 storage tab 时刷新）
-      storageTabRef.value?.refresh()
+      // 检查是否有指定的跳转目标
+      const target = layoutStore.settingTarget
+      if (target) {
+        activeTab.value = target.tab
+        // 如果有指定 section，等待渲染后滚动（通用逻辑）
+        if (target.section) {
+          await nextTick()
+          // 延迟一下确保目标 Tab 已渲染
+          setTimeout(() => {
+            const tabRef = tabRefs.value[target.tab]
+            tabRef?.scrollToSection?.(target.section!)
+          }, 100)
+        }
+      } else {
+        activeTab.value = 'settings' // 默认打开基础设置 Tab
+      }
+      // 刷新存储管理
+      tabRefs.value['storage']?.refresh?.()
+    } else {
+      // 弹窗关闭时清空 target
+      layoutStore.clearSettingTarget()
     }
   }
 )
@@ -60,9 +93,8 @@ watch(
 watch(
   () => activeTab.value,
   (newTab) => {
-    if (newTab === 'storage') {
-      storageTabRef.value?.refresh()
-    }
+    // 通用刷新逻辑
+    tabRefs.value[newTab]?.refresh?.()
   }
 )
 </script>
@@ -91,12 +123,12 @@ watch(
 
           <!-- AI 设置 -->
           <div v-show="activeTab === 'ai'" class="h-full">
-            <AISettingsTab @config-changed="handleAIConfigChanged" />
+            <AISettingsTab :ref="(el) => setTabRef('ai', el)" @config-changed="handleAIConfigChanged" />
           </div>
 
           <!-- 存储管理 -->
           <div v-show="activeTab === 'storage'" class="h-full">
-            <StorageTab ref="storageTabRef" />
+            <StorageTab :ref="(el) => setTabRef('storage', el)" />
           </div>
 
           <!-- 关于 -->

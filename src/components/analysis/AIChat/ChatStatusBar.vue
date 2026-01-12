@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePromptStore } from '@/stores/prompt'
+import { useLayoutStore } from '@/stores/layout'
 
 const { t } = useI18n()
 
@@ -16,7 +17,8 @@ const props = defineProps<{
 
 // Store
 const promptStore = usePromptStore()
-const { aiPromptSettings, activePreset } = storeToRefs(promptStore)
+const layoutStore = useLayoutStore()
+const { aiPromptSettings, activePreset, aiGlobalSettings } = storeToRefs(promptStore)
 
 // 当前类型对应的预设列表（根据 applicableTo 过滤）
 const currentPresets = computed(() => promptStore.getPresetsForChatType(props.chatType))
@@ -37,6 +39,17 @@ const isPresetPopoverOpen = ref(false)
 function setActivePreset(presetId: string) {
   promptStore.setActivePreset(presetId)
   isPresetPopoverOpen.value = false
+}
+
+// 打开设置弹窗并跳转到预设配置
+function openPresetSettings() {
+  isPresetPopoverOpen.value = false
+  layoutStore.openSettingAt('ai', 'preset')
+}
+
+// 打开设置弹窗并跳转到对话配置（消息条数限制）
+function openChatSettings() {
+  layoutStore.openSettingAt('ai', 'chat')
 }
 </script>
 
@@ -76,12 +89,32 @@ function setActivePreset(presetId: string) {
             />
             <span class="truncate">{{ preset.name }}</span>
           </button>
+
+          <!-- 分隔线 -->
+          <div class="my-1 border-t border-gray-200 dark:border-gray-700" />
+
+          <!-- 新增预设按钮 -->
+          <button
+            class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            @click="openPresetSettings"
+          >
+            <UIcon name="i-heroicons-plus" class="h-4 w-4 shrink-0" />
+            <span>{{ t('preset.new') }}</span>
+          </button>
         </div>
       </template>
     </UPopover>
 
-    <!-- 右侧：Token 使用量 + 配置状态指示 -->
+    <!-- 右侧：配置状态指示 -->
     <div class="flex items-center gap-3">
+      <!-- 消息条数限制（点击跳转设置） -->
+      <button
+        class="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        :title="t('messageLimit.title')"
+        @click="openChatSettings"
+      >
+        <span>{{ t('messageLimit.label') }}{{ aiGlobalSettings.maxMessagesPerRequest }}</span>
+      </button>
       <!-- Token 使用量 -->
       <div
         v-if="sessionTokenUsage.totalTokens > 0"
@@ -111,7 +144,12 @@ function setActivePreset(presetId: string) {
     "preset": {
       "default": "默认预设",
       "groupTitle": "群聊提示词预设",
-      "privateTitle": "私聊提示词预设"
+      "privateTitle": "私聊提示词预设",
+      "new": "新增提示词"
+    },
+    "messageLimit": {
+      "label": "消息上限：",
+      "title": "每次发送的最大消息条数，点击配置"
     },
     "tokenUsageTitle": "本次会话累计 Token 使用量",
     "status": {
@@ -123,7 +161,12 @@ function setActivePreset(presetId: string) {
     "preset": {
       "default": "Default Preset",
       "groupTitle": "Group Chat Presets",
-      "privateTitle": "Private Chat Presets"
+      "privateTitle": "Private Chat Presets",
+      "new": "New Preset"
+    },
+    "messageLimit": {
+      "label": "Limit: ",
+      "title": "Max messages per request, click to configure"
     },
     "tokenUsageTitle": "Total token usage in this session",
     "status": {

@@ -94,11 +94,27 @@ export function useSubTabsScroll(navItems: ComputedRef<SubTabNavItem[]> | Ref<Su
     scrollContainerRef.value?.removeEventListener('scroll', handleScroll)
   })
 
+  /**
+   * 程序化滚动到指定 section（供外部调用）
+   */
+  function scrollToId(id: string) {
+    const section = sectionRefs.value[id]
+    if (section && scrollContainerRef.value) {
+      isUserClick.value = true
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      activeNav.value = id
+      setTimeout(() => {
+        isUserClick.value = false
+      }, 500)
+    }
+  }
+
   return {
     activeNav,
     scrollContainerRef,
     sectionRefs,
     setSectionRef,
     handleNavChange,
+    scrollToId,
   }
 }

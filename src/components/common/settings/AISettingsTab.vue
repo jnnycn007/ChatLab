@@ -22,13 +22,25 @@ const navItems = computed(() => [
 ])
 
 // 使用二级导航滚动联动 composable
-const { activeNav, scrollContainerRef, setSectionRef, handleNavChange } = useSubTabsScroll(navItems)
+const { activeNav, scrollContainerRef, setSectionRef, handleNavChange, scrollToId } = useSubTabsScroll(navItems)
 void scrollContainerRef // 在模板中通过 ref="scrollContainerRef" 使用
 
 // AI 配置变更回调
 function handleAIConfigChanged() {
   emit('config-changed')
 }
+
+/**
+ * 滚动到指定 section（供外部调用）
+ */
+function scrollToSection(sectionId: string) {
+  scrollToId(sectionId)
+}
+
+// 暴露方法供父组件调用
+defineExpose({
+  scrollToSection,
+})
 
 // Template refs
 const aiModelConfigRef = ref<InstanceType<typeof AIModelConfigTab> | null>(null)
