@@ -16,6 +16,7 @@ ChatLab 是一个免费、开源、本地化的，专注于分析聊天记录的
 
 ## 使用指南
 
+- [下载 ChatLab 指南](https://chatlab.fun/cn/)
 - [导出聊天记录指南](https://chatlab.fun/cn/usage/how-to-export.html)
 - [标准化格式规范](https://chatlab.fun/cn/usage/chatlab-format.html)
 - [故障排查指南](https://chatlab.fun/cn/usage/troubleshooting.html)
