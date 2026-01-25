@@ -644,6 +644,8 @@ interface ChatSessionItem {
   endTs: number
   messageCount: number
   firstMessageId: number
+  /** 会话摘要（如果有） */
+  summary?: string | null
 }
 
 interface SessionApi {
@@ -653,6 +655,46 @@ interface SessionApi {
   clear: (sessionId: string) => Promise<boolean>
   updateGapThreshold: (sessionId: string, gapThreshold: number | null) => Promise<boolean>
   getSessions: (sessionId: string) => Promise<ChatSessionItem[]>
+  /** 生成单个会话摘要 */
+  generateSummary: (
+    dbSessionId: string,
+    chatSessionId: number,
+    locale?: string,
+    forceRegenerate?: boolean
+  ) => Promise<{ success: boolean; summary?: string; error?: string }>
+  /** 批量生成会话摘要 */
+  generateSummaries: (
+    dbSessionId: string,
+    chatSessionIds: number[],
+    locale?: string
+  ) => Promise<{ success: number; failed: number; skipped: number }>
+  /** 根据时间范围查询会话列表 */
+  getByTimeRange: (
+    dbSessionId: string,
+    startTs: number,
+    endTs: number
+  ) => Promise<
+    Array<{
+      id: number
+      startTs: number
+      endTs: number
+      messageCount: number
+      summary: string | null
+    }>
+  >
+  /** 获取最近 N 条会话 */
+  getRecent: (
+    dbSessionId: string,
+    limit: number
+  ) => Promise<
+    Array<{
+      id: number
+      startTs: number
+      endTs: number
+      messageCount: number
+      summary: string | null
+    }>
+  >
 }
 
 declare global {

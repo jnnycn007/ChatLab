@@ -746,6 +746,153 @@ export function registerChatHandlers(ctx: IpcContext): void {
     }
   })
 
+  // ==================== 会话摘要 ====================
+
+  /**
+   * 生成单个会话摘要
+   */
+  ipcMain.handle(
+    'session:generateSummary',
+    async (_, dbSessionId: string, chatSessionId: number, locale?: string, forceRegenerate?: boolean) => {
+      console.log('[IPC] session:generateSummary 收到请求:', { dbSessionId, chatSessionId, locale, forceRegenerate })
+      try {
+        const { generateSessionSummary } = await import('../ai/summary')
+        const result = await generateSessionSummary(dbSessionId, chatSessionId, locale || 'zh-CN', forceRegenerate || false)
+        console.log('[IPC] session:generateSummary 返回:', result)
+        return result
+      } catch (error) {
+        console.error('[IPC] 生成会话摘要失败：', error)
+        return { success: false, error: String(error) }
+      }
+    }
+  )
+
+  /**
+   * 批量生成会话摘要
+   */
+  ipcMain.handle(
+    'session:generateSummaries',
+    async (_, dbSessionId: string, chatSessionIds: number[], locale?: string) => {
+      try {
+        const { generateSessionSummaries } = await import('../ai/summary')
+        return await generateSessionSummaries(dbSessionId, chatSessionIds, locale || 'zh-CN')
+      } catch (error) {
+        console.error('批量生成会话摘要失败：', error)
+        return { success: 0, failed: chatSessionIds.length, skipped: 0 }
+      }
+    }
+  )
+
+  /**
+   * 根据时间范围查询会话列表
+   */
+  ipcMain.handle(
+    'session:getByTimeRange',
+    async (_, dbSessionId: string, startTs: number, endTs: number) => {
+      console.log('[session:getByTimeRange] 查询参数:', { dbSessionId, startTs, endTs })
+      console.log('[session:getByTimeRange] 时间范围:', {
+        start: new Date(startTs * 1000).toISOString(),
+        end: new Date(endTs * 1000).toISOString(),
+      })
+
+      try {
+        const { openDatabase } = await import('../database/core')
+        const db = openDatabase(dbSessionId, true)
+        if (!db) {
+          console.log('[session:getByTimeRange] 数据库打开失败')
+          return []
+        }
+
+        // 先查询总数和时间范围
+        const stats = db.prepare('SELECT COUNT(*) as count, MIN(start_ts) as minTs, MAX(start_ts) as maxTs FROM chat_session').get() as { count: number; minTs: number; maxTs: number }
+        console.log('[session:getByTimeRange] 数据库会话统计:', {
+          count: stats.count,
+          minTs: stats.minTs ? new Date(stats.minTs * 1000).toISOString() : null,
+          maxTs: stats.maxTs ? new Date(stats.maxTs * 1000).toISOString() : null,
+        })
+
+        const sessions = db
+          .prepare(
+            `
+            SELECT 
+              id, 
+              start_ts as startTs, 
+              end_ts as endTs, 
+              message_count as messageCount,
+              summary
+            FROM chat_session
+            WHERE start_ts >= ? AND start_ts <= ?
+            ORDER BY start_ts DESC
+          `
+          )
+          .all(startTs, endTs) as Array<{
+          id: number
+          startTs: number
+          endTs: number
+          messageCount: number
+          summary: string | null
+        }>
+
+        console.log('[session:getByTimeRange] 查询结果数量:', sessions.length)
+        return sessions
+      } catch (error) {
+        console.error('查询时间范围会话失败：', error)
+        return []
+      }
+    }
+  )
+
+  /**
+   * 获取最近 N 条会话
+   */
+  ipcMain.handle('session:getRecent', async (_, dbSessionId: string, limit: number) => {
+    console.log('[session:getRecent] 查询参数:', { dbSessionId, limit })
+    try {
+      const { openDatabase } = await import('../database/core')
+      const db = openDatabase(dbSessionId, true)
+      if (!db) {
+        console.log('[session:getRecent] 数据库打开失败')
+        return []
+      }
+
+      // 先检查表是否存在
+      const tableInfo = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_session'").get()
+      console.log('[session:getRecent] chat_session 表:', tableInfo ? '存在' : '不存在')
+
+      if (!tableInfo) {
+        return []
+      }
+
+      const sessions = db
+        .prepare(
+          `
+          SELECT 
+            id, 
+            start_ts as startTs, 
+            end_ts as endTs, 
+            message_count as messageCount,
+            summary
+          FROM chat_session
+          ORDER BY start_ts DESC
+          LIMIT ?
+        `
+        )
+        .all(limit) as Array<{
+        id: number
+        startTs: number
+        endTs: number
+        messageCount: number
+        summary: string | null
+      }>
+
+      console.log('[session:getRecent] 查询结果数量:', sessions.length)
+      return sessions
+    } catch (error) {
+      console.error('查询最近会话失败：', error)
+      return []
+    }
+  })
+
   // ==================== 增量导入 ====================
 
   /**

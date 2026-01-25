@@ -1335,6 +1335,66 @@ const sessionApi = {
   getSessions: (sessionId: string): Promise<ChatSessionItem[]> => {
     return ipcRenderer.invoke('session:getSessions', sessionId)
   },
+
+  /**
+   * 生成单个会话摘要
+   */
+  generateSummary: (
+    dbSessionId: string,
+    chatSessionId: number,
+    locale?: string,
+    forceRegenerate?: boolean
+  ): Promise<{ success: boolean; summary?: string; error?: string }> => {
+    return ipcRenderer.invoke('session:generateSummary', dbSessionId, chatSessionId, locale, forceRegenerate)
+  },
+
+  /**
+   * 批量生成会话摘要
+   */
+  generateSummaries: (
+    dbSessionId: string,
+    chatSessionIds: number[],
+    locale?: string
+  ): Promise<{ success: number; failed: number; skipped: number }> => {
+    return ipcRenderer.invoke('session:generateSummaries', dbSessionId, chatSessionIds, locale)
+  },
+
+  /**
+   * 根据时间范围查询会话列表
+   */
+  getByTimeRange: (
+    dbSessionId: string,
+    startTs: number,
+    endTs: number
+  ): Promise<
+    Array<{
+      id: number
+      startTs: number
+      endTs: number
+      messageCount: number
+      summary: string | null
+    }>
+  > => {
+    return ipcRenderer.invoke('session:getByTimeRange', dbSessionId, startTs, endTs)
+  },
+
+  /**
+   * 获取最近 N 条会话
+   */
+  getRecent: (
+    dbSessionId: string,
+    limit: number
+  ): Promise<
+    Array<{
+      id: number
+      startTs: number
+      endTs: number
+      messageCount: number
+      summary: string | null
+    }>
+  > => {
+    return ipcRenderer.invoke('session:getRecent', dbSessionId, limit)
+  },
 }
 
 // 扩展 api，添加 dialog、clipboard 和应用功能

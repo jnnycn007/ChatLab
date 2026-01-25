@@ -307,6 +307,8 @@ export interface ChatSessionItem {
   endTs: number
   messageCount: number
   firstMessageId: number
+  /** 会话摘要（如果有） */
+  summary?: string | null
 }
 
 /**
@@ -321,13 +323,14 @@ export function getSessions(sessionId: string): ChatSessionItem[] {
   }
 
   try {
-    // 查询会话列表，同时获取每个会话的首条消息 ID
+    // 查询会话列表，同时获取每个会话的首条消息 ID 和摘要
     const sql = `
       SELECT
         cs.id,
         cs.start_ts as startTs,
         cs.end_ts as endTs,
         cs.message_count as messageCount,
+        cs.summary,
         (SELECT mc.message_id FROM message_context mc WHERE mc.session_id = cs.id ORDER BY mc.message_id LIMIT 1) as firstMessageId
       FROM chat_session cs
       ORDER BY cs.start_ts ASC
@@ -336,6 +339,54 @@ export function getSessions(sessionId: string): ChatSessionItem[] {
     return sessions
   } catch {
     return []
+  } finally {
+    db.close()
+  }
+}
+
+// ==================== 会话摘要相关函数 ====================
+
+/**
+ * 保存会话摘要
+ * @param sessionId 数据库会话ID
+ * @param chatSessionId 会话索引中的会话ID
+ * @param summary 摘要内容
+ */
+export function saveSessionSummary(sessionId: string, chatSessionId: number, summary: string): void {
+  // 先关闭缓存的只读连接
+  closeDatabase(sessionId)
+
+  const db = openWritableDatabase(sessionId)
+  if (!db) {
+    throw new Error(`无法打开数据库: ${sessionId}`)
+  }
+
+  try {
+    db.prepare('UPDATE chat_session SET summary = ? WHERE id = ?').run(summary, chatSessionId)
+  } finally {
+    db.close()
+  }
+}
+
+/**
+ * 获取会话摘要
+ * @param sessionId 数据库会话ID
+ * @param chatSessionId 会话索引中的会话ID
+ * @returns 摘要内容
+ */
+export function getSessionSummary(sessionId: string, chatSessionId: number): string | null {
+  const db = openReadonlyDatabase(sessionId)
+  if (!db) {
+    return null
+  }
+
+  try {
+    const result = db.prepare('SELECT summary FROM chat_session WHERE id = ?').get(chatSessionId) as
+      | { summary: string | null }
+      | undefined
+    return result?.summary || null
+  } catch {
+    return null
   } finally {
     db.close()
   }
@@ -532,6 +583,7 @@ export function getSessionMessages(
       | undefined
 
     if (!session) {
+      db.close()
       return null
     }
 

@@ -6,6 +6,7 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVirtualizer } from '@tanstack/vue-virtual'
+import BatchSummaryModal from './BatchSummaryModal.vue'
 
 interface ChatSessionItem {
   id: number
@@ -13,6 +14,8 @@ interface ChatSessionItem {
   endTs: number
   messageCount: number
   firstMessageId: number
+  /** 会话摘要（如果有） */
+  summary?: string | null
 }
 
 // 扁平化列表项类型
@@ -35,12 +38,18 @@ const emit = defineEmits<{
   (e: 'update:collapsed', value: boolean): void
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // 状态
 const allSessions = ref<ChatSessionItem[]>([])
 const isLoading = ref(true)
 const scrollContainerRef = ref<HTMLElement | null>(null)
+
+// 正在生成摘要的会话 ID 集合
+const generatingSummaryIds = ref<Set<number>>(new Set())
+
+// 批量生成弹窗状态
+const showBatchSummaryModal = ref(false)
 
 // 是否折叠
 const isCollapsed = computed({
@@ -95,7 +104,7 @@ const flatList = computed<FlatListItem[]>(() => {
 
 // 估算项目高度
 const ESTIMATED_DATE_HEIGHT = 28 // 日期头高度
-const ESTIMATED_SESSION_HEIGHT = 28 // 会话项高度
+const ESTIMATED_SESSION_HEIGHT = 60 // 会话项高度（含两行摘要）
 
 // 虚拟化器
 const virtualizer = useVirtualizer(
@@ -178,6 +187,49 @@ function handleSelectSession(session: ChatSessionItem) {
   emit('select', session.id, session.firstMessageId)
 }
 
+// 生成摘要
+async function generateSummary(session: ChatSessionItem, event: Event) {
+  event.stopPropagation() // 防止触发选择会话
+  event.preventDefault()
+
+  console.log('[SessionTimeline] 开始生成摘要:', session.id, props.sessionId)
+
+  if (generatingSummaryIds.value.has(session.id)) {
+    console.log('[SessionTimeline] 已在生成中，跳过')
+    return
+  }
+
+  generatingSummaryIds.value.add(session.id)
+  console.log('[SessionTimeline] 正在生成中的会话:', Array.from(generatingSummaryIds.value))
+
+  try {
+    console.log('[SessionTimeline] 调用 IPC...')
+    const result = await window.sessionApi.generateSummary(props.sessionId, session.id, locale.value)
+    console.log('[SessionTimeline] IPC 返回:', result)
+
+    if (result.success && result.summary) {
+      // 更新本地数据
+      const index = allSessions.value.findIndex((s) => s.id === session.id)
+      if (index !== -1) {
+        allSessions.value[index] = { ...allSessions.value[index], summary: result.summary }
+        console.log('[SessionTimeline] 摘要已更新:', result.summary)
+      }
+    } else {
+      console.log('[SessionTimeline] 生成失败:', result.error)
+    }
+  } catch (error) {
+    console.error('[SessionTimeline] 生成摘要失败:', error)
+  } finally {
+    generatingSummaryIds.value.delete(session.id)
+    console.log('[SessionTimeline] 生成完成')
+  }
+}
+
+// 判断是否正在生成摘要
+function isGenerating(sessionId: number): boolean {
+  return generatingSummaryIds.value.has(sessionId)
+}
+
 // 测量元素高度
 function measureElement(el: Element | null) {
   if (el) {
@@ -229,7 +281,17 @@ onMounted(() => {
     <!-- 头部 -->
     <div class="flex items-center justify-between border-b border-gray-200 px-2 py-1.5 dark:border-gray-700">
       <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('timeline') }}</span>
-      <UButton icon="i-heroicons-chevron-left" variant="ghost" size="xs" @click="isCollapsed = true" />
+      <div class="flex items-center gap-0.5">
+        <UTooltip :text="t('chatRecord.batchSummary.title', '批量生成摘要')">
+          <UButton
+            icon="i-heroicons-sparkles"
+            variant="ghost"
+            size="xs"
+            @click="showBatchSummaryModal = true"
+          />
+        </UTooltip>
+        <UButton icon="i-heroicons-chevron-left" variant="ghost" size="xs" @click="isCollapsed = true" />
+      </div>
     </div>
 
     <!-- 加载中 -->
@@ -267,7 +329,7 @@ onMounted(() => {
           <!-- 会话项 -->
           <template v-else-if="flatList[virtualItem.index]?.type === 'session'">
             <button
-              class="flex w-full items-center justify-between rounded px-2 py-1 pl-4 text-left transition-colors"
+              class="flex w-full flex-col rounded px-2 py-1 pl-4 text-left transition-colors"
               :class="[
                 activeSessionId === (flatList[virtualItem.index] as { session: ChatSessionItem }).session.id
                   ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
@@ -275,18 +337,67 @@ onMounted(() => {
               ]"
               @click="handleSelectSession((flatList[virtualItem.index] as { session: ChatSessionItem }).session)"
             >
-              <span class="text-xs text-gray-600 dark:text-gray-300">
-                {{ formatTime((flatList[virtualItem.index] as { session: ChatSessionItem }).session.startTs) }}
-              </span>
-              <span class="text-xs text-gray-400">
-                ({{ (flatList[virtualItem.index] as { session: ChatSessionItem }).session.messageCount }})
-              </span>
+              <!-- 时间和消息数 -->
+              <div class="flex w-full items-center justify-between">
+                <span class="text-xs text-gray-600 dark:text-gray-300">
+                  {{ formatTime((flatList[virtualItem.index] as { session: ChatSessionItem }).session.startTs) }}
+                </span>
+                <span class="text-xs text-gray-400">
+                  ({{ (flatList[virtualItem.index] as { session: ChatSessionItem }).session.messageCount }})
+                </span>
+              </div>
+
+              <!-- 摘要或生成按钮 -->
+              <div class="mt-0.5 flex w-full items-center">
+                <!-- 有摘要：显示摘要（两行） -->
+                <UTooltip
+                  v-if="(flatList[virtualItem.index] as { session: ChatSessionItem }).session.summary"
+                  :popper="{ placement: 'right' }"
+                  :ui="{ content: 'z-[10001] h-auto max-h-80 overflow-y-auto' }"
+                >
+                  <span class="line-clamp-2 text-xs leading-tight text-gray-400 dark:text-gray-500">
+                    {{ (flatList[virtualItem.index] as { session: ChatSessionItem }).session.summary }}
+                  </span>
+                  <template #content>
+                    <div class="max-w-sm whitespace-pre-wrap text-sm leading-relaxed">
+                      {{ (flatList[virtualItem.index] as { session: ChatSessionItem }).session.summary }}
+                    </div>
+                  </template>
+                </UTooltip>
+
+                <!-- 无摘要且消息数>=3：显示生成按钮 -->
+                <span
+                  v-else-if="(flatList[virtualItem.index] as { session: ChatSessionItem }).session.messageCount >= 3"
+                  class="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400"
+                  @click="generateSummary((flatList[virtualItem.index] as { session: ChatSessionItem }).session, $event)"
+                >
+                  <UIcon
+                    v-if="isGenerating((flatList[virtualItem.index] as { session: ChatSessionItem }).session.id)"
+                    name="i-heroicons-arrow-path"
+                    class="h-3 w-3 animate-spin"
+                  />
+                  <UIcon v-else name="i-heroicons-sparkles" class="h-3 w-3" />
+                  <span>{{ t('generateSummary') }}</span>
+                </span>
+
+                <!-- 消息数<3：显示提示 -->
+                <span v-else class="text-xs italic text-gray-300 dark:text-gray-600">
+                  {{ t('tooFewMessages') }}
+                </span>
+              </div>
             </button>
           </template>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 批量生成摘要弹窗 -->
+  <BatchSummaryModal
+    v-model:open="showBatchSummaryModal"
+    :session-id="sessionId"
+    @completed="loadSessions"
+  />
 </template>
 
 <style scoped>
@@ -300,11 +411,15 @@ onMounted(() => {
 {
   "zh-CN": {
     "timeline": "会话",
-    "noSessions": "暂无会话"
+    "noSessions": "暂无会话",
+    "generateSummary": "生成摘要",
+    "tooFewMessages": "消息太少"
   },
   "en-US": {
     "timeline": "Sessions",
-    "noSessions": "No sessions"
+    "noSessions": "No sessions",
+    "generateSummary": "Summarize",
+    "tooFewMessages": "Too few"
   }
 }
 </i18n>
