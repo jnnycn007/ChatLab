@@ -182,10 +182,17 @@ async function checkNewVersion() {
     if (!currentVersion) return
 
     // 2. 获取 localStorage 中存储的已读版本号
-    const readVersion = normalizeVersion(localStorage.getItem(CHANGELOG_READ_KEY))
+    const rawReadVersion = localStorage.getItem(CHANGELOG_READ_KEY)
+    const readVersion = normalizeVersion(rawReadVersion)
 
-    // 3. 如果 readVersion 不为空且等于 currentVersion，说明用户已看过，不需要请求数据
-    if (readVersion && readVersion === currentVersion) {
+    // 2.1 如果是全新用户（从未设置过该 key），静默标记当前版本为已读，不弹窗
+    if (rawReadVersion === null) {
+      markVersionAsRead(currentVersion)
+      return
+    }
+
+    // 3. 如果 readVersion 等于 currentVersion，说明用户已看过，不需要请求数据
+    if (readVersion === currentVersion) {
       return
     }
 
