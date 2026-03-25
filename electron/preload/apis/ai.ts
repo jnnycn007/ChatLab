@@ -419,7 +419,7 @@ export const aiApi = {
   /**
    * 创建 AI 对话
    */
-  createConversation: (sessionId: string, title?: string, assistantId?: string): Promise<AIConversation> => {
+  createConversation: (sessionId: string, title?: string, assistantId: string): Promise<AIConversation> => {
     return ipcRenderer.invoke('ai:createConversation', sessionId, title, assistantId)
   },
 
@@ -709,9 +709,7 @@ export const assistantApi = {
     return ipcRenderer.invoke('assistant:update', id, updates)
   },
 
-  create: (
-    config: Omit<AssistantConfigFull, 'id'>
-  ): Promise<{ success: boolean; id?: string; error?: string }> => {
+  create: (config: Omit<AssistantConfigFull, 'id'>): Promise<{ success: boolean; id?: string; error?: string }> => {
     return ipcRenderer.invoke('assistant:create', config)
   },
 

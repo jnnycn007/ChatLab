@@ -150,6 +150,15 @@ export interface SendMessageResult {
 
 const DRAFT_CONVERSATION_KEY = '__draft__'
 
+/**
+ * 创建对话时前端已经知道 locale，因此默认助手在这里选择即可。
+ */
+function getDefaultGeneralAssistantId(locale: string): 'general_cn' | 'general_en' | 'general_ja' {
+  if (locale.startsWith('en')) return 'general_en'
+  if (locale.startsWith('ja')) return 'general_ja'
+  return 'general_cn'
+}
+
 function buildTimeFilterKey(timeFilter?: { startTs: number; endTs: number }): string {
   if (!timeFilter) return 'all'
   return `${timeFilter.startTs}_${timeFilter.endTs}`
@@ -714,7 +723,7 @@ export const useAIChatStore = defineStore('aiChatRuntime', () => {
         updateAIMessage({ contentBlocks: [...blocks] })
       }
 
-      const currentAssistantId = targetBuffer.assistantId ?? undefined
+      const currentAssistantId = targetBuffer.assistantId ?? getDefaultGeneralAssistantId(state.locale)
       if (!resolvedConversationId) {
         const title = content.slice(0, 50) + (content.length > 50 ? '...' : '')
         const conversation = await window.aiApi.createConversation(state.sessionId, title, currentAssistantId)
@@ -732,7 +741,7 @@ export const useAIChatStore = defineStore('aiChatRuntime', () => {
 
         resolvedConversationId = conversation.id
         renameBufferKey(state, DRAFT_CONVERSATION_KEY, conversation.id)
-        targetBuffer.assistantId = currentAssistantId ?? null
+        targetBuffer.assistantId = currentAssistantId
         if (activeTask.value?.chatKey === chatKey) {
           activeTask.value.conversationId = conversation.id
         }

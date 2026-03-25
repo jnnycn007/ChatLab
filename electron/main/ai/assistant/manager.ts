@@ -56,6 +56,7 @@ function getBuiltinConfig(id: string): AssistantConfig | undefined {
 }
 
 const ASSISTANTS_DIR_NAME = 'assistants'
+const GENERAL_IDS = ['general_cn', 'general_en', 'general_ja']
 
 const cachedAssistants: Map<string, AssistantConfig> = new Map()
 let initialized = false
@@ -65,9 +66,6 @@ function getAssistantsDir(): string {
 }
 
 // ==================== 初始化 ====================
-
-/** 所有 general 助手 id（各语言一份，启动时自动确保存在） */
-const GENERAL_IDS = ['general_cn', 'general_en', 'general_ja']
 
 /**
  * 初始化助手管理器

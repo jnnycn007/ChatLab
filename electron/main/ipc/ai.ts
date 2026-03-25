@@ -8,6 +8,7 @@ import * as rag from '../ai/rag'
 import { aiLogger, setDebugMode } from '../ai/logger'
 import { getLogsDir } from '../paths'
 import { Agent, type AgentStreamChunk, type SkillContext } from '../ai/agent'
+import { getDefaultGeneralAssistantId } from '../ai/assistant/defaultGeneral'
 import { getActiveConfig, buildPiModel } from '../ai/llm'
 import * as assistantManager from '../ai/assistant'
 import type { AssistantConfig } from '../ai/assistant/types'
@@ -148,6 +149,9 @@ export function registerAIHandlers({ win }: IpcContext): void {
    */
   ipcMain.handle('ai:createConversation', async (_, sessionId: string, title?: string, assistantId?: string) => {
     try {
+      if (!assistantId) {
+        throw new Error('assistantId is required when creating a conversation')
+      }
       return aiConversations.createConversation(sessionId, title, assistantId)
     } catch (error) {
       console.error('Failed to create AI conversation:', error)
@@ -830,14 +834,17 @@ export function registerAIHandlers({ win }: IpcContext): void {
         })
 
         // 提示词系统已退场，主流程统一从助手配置获取 systemPrompt。
-        // 若前端没有显式传 assistantId，则退回 general 助手兜底。
-        let resolvedAssistantId = assistantId || 'general'
+        const defaultAssistantId = getDefaultGeneralAssistantId(locale)
+        let resolvedAssistantId = assistantId || defaultAssistantId
         let assistantConfig: AssistantConfig | undefined =
           assistantManager.getAssistantConfig(resolvedAssistantId) ?? undefined
-        if (!assistantConfig && resolvedAssistantId !== 'general') {
-          aiLogger.warn('IPC', `Assistant not found: ${resolvedAssistantId}, falling back to general`)
-          resolvedAssistantId = 'general'
-          assistantConfig = assistantManager.getAssistantConfig('general') ?? undefined
+        if (!assistantConfig && resolvedAssistantId !== defaultAssistantId) {
+          aiLogger.warn('IPC', `Assistant not found: ${resolvedAssistantId}, falling back to ${defaultAssistantId}`, {
+            requestedAssistantId: assistantId ?? null,
+            locale: locale ?? null,
+          })
+          resolvedAssistantId = defaultAssistantId
+          assistantConfig = assistantManager.getAssistantConfig(defaultAssistantId) ?? undefined
         }
 
         // 构建技能上下文

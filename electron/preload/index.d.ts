@@ -358,7 +358,7 @@ interface AiApi {
     senderId?: number,
     keywords?: string[]
   ) => Promise<{ messages: SearchMessageResult[]; hasMore: boolean }>
-  createConversation: (sessionId: string, title?: string, assistantId?: string) => Promise<AIConversation>
+  createConversation: (sessionId: string, title?: string, assistantId: string) => Promise<AIConversation>
   getConversations: (sessionId: string) => Promise<AIConversation[]>
   getConversation: (conversationId: string) => Promise<AIConversation | null>
   updateConversationTitle: (conversationId: string, title: string) => Promise<boolean>

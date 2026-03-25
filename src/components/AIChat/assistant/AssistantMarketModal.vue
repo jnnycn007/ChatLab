@@ -53,7 +53,7 @@ watch(
 )
 
 function isGeneral(id: string): boolean {
-  return id === 'general'
+  return id === 'general_cn' || id === 'general_en' || id === 'general_ja'
 }
 
 function handleConfigure(id: string) {
@@ -309,9 +309,7 @@ function getChatTypeLabel(types?: ('group' | 'private')[]): string | null {
                 </button>
 
                 <template v-else>
-                  <span
-                    class="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500"
-                  >
+                  <span class="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
                     {{ t('ai.assistant.market.imported') }}
                   </span>
                   <button
@@ -319,7 +317,9 @@ function getChatTypeLabel(types?: ('group' | 'private')[]): string | null {
                     :disabled="importingIds.has(item.id)"
                     @click="handleReimportCloud(item)"
                   >
-                    {{ importingIds.has(item.id) ? t('ai.assistant.market.importing') : t('ai.assistant.market.reimport') }}
+                    {{
+                      importingIds.has(item.id) ? t('ai.assistant.market.importing') : t('ai.assistant.market.reimport')
+                    }}
                   </button>
                 </template>
 
@@ -335,7 +335,10 @@ function getChatTypeLabel(types?: ('group' | 'private')[]): string | null {
             </div>
           </div>
 
-          <div v-if="!cloudLoading && !cloudError && sortedCatalog.length === 0" class="py-12 text-center text-sm text-gray-400">
+          <div
+            v-if="!cloudLoading && !cloudError && sortedCatalog.length === 0"
+            class="py-12 text-center text-sm text-gray-400"
+          >
             {{ t('ai.assistant.market.noCatalog') }}
           </div>
         </div>

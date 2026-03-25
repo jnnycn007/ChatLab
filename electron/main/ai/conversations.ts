@@ -89,9 +89,10 @@ function migrateAiDatabase(db: Database.Database): void {
     const convTableInfo = db.pragma('table_info(ai_conversation)') as Array<{ name: string }>
     const convColumns = convTableInfo.map((col) => col.name)
 
-    // 检查并添加 assistant_id 列（旧对话默认归属 general 助手）
+    // 检查并添加 assistant_id 列。
+    // 这里只写新默认助手 ID；旧数据由用户手动清理，不在运行时兼容。
     if (!convColumns.includes('assistant_id')) {
-      db.exec("ALTER TABLE ai_conversation ADD COLUMN assistant_id TEXT DEFAULT 'general'")
+      db.exec(`ALTER TABLE ai_conversation ADD COLUMN assistant_id TEXT DEFAULT '${DEFAULT_GENERAL_ID}'`)
       console.log('[AI DB Migration] Adding assistant_id column to ai_conversation')
     }
   } catch (error) {
@@ -159,7 +160,7 @@ export interface AIMessage {
 /**
  * 创建新对话
  */
-export function createConversation(sessionId: string, title?: string, assistantId?: string): AIConversation {
+export function createConversation(sessionId: string, title: string | undefined, assistantId: string): AIConversation {
   const db = getAiDb()
   const now = Math.floor(Date.now() / 1000)
   const id = `conv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -169,13 +170,13 @@ export function createConversation(sessionId: string, title?: string, assistantI
     INSERT INTO ai_conversation (id, session_id, title, assistant_id, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `
-  ).run(id, sessionId, title || null, assistantId || 'general', now, now)
+  ).run(id, sessionId, title || null, assistantId, now, now)
 
   return {
     id,
     sessionId,
     title: title || null,
-    assistantId: assistantId || 'general',
+    assistantId,
     createdAt: now,
     updatedAt: now,
   }
