@@ -103,8 +103,18 @@ const timeRangeString = computed(() => {
   const sorted = [...stats.value.months].sort((a, b) => a.month.localeCompare(b.month))
   const first = sorted[0].month
   const last = sorted[sorted.length - 1].month
-  if (first === last) return `在 ${first.replace('-', '年')}月 中，`
-  return `在 ${first.replace('-', '年')}月 至 ${last.replace('-', '年')}月 期间，`
+  const [firstYear, firstMonth] = first.split('-')
+  const [lastYear, lastMonth] = last.split('-')
+  const firstMonthText = t('views.relationship.hero.monthPart', {
+    year: firstYear,
+    month: Number.parseInt(firstMonth, 10),
+  })
+  const lastMonthText = t('views.relationship.hero.monthPart', {
+    year: lastYear,
+    month: Number.parseInt(lastMonth, 10),
+  })
+  if (first === last) return t('views.relationship.hero.timeRange.singleMonth', { month: firstMonthText })
+  return t('views.relationship.hero.timeRange.range', { start: firstMonthText, end: lastMonthText })
 })
 
 function getOverallLabel(): string {
@@ -231,12 +241,12 @@ function getMonthCloseRatio(month: RelationshipMonthStats): number {
 
 function formatMonth(monthStr: string): string {
   const [year, month] = monthStr.split('-')
-  return t('views.relationship.monthFormat', { year, month: parseInt(month) })
+  return t('views.relationship.monthFormat', { year, month: Number.parseInt(month, 10) })
 }
 
 function formatMonthShort(monthStr: string): string {
   const parts = monthStr.split('-')
-  return `${parts[1]}月`
+  return t('views.relationship.monthShortFormat', { month: Number.parseInt(parts[1], 10) })
 }
 
 function getIceBreakCount(memberId?: number): number {
@@ -344,23 +354,33 @@ function formatDuration(seconds: number): string {
                   </p>
 
                   <div class="mb-4 flex items-baseline gap-2">
-                    <span class="text-xl font-medium text-gray-700 dark:text-gray-300">你们共进行了</span>
+                    <span class="text-xl font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('views.relationship.hero.totalSessionsPrefix') }}
+                    </span>
                     <span class="font-black text-5xl tracking-tight text-gray-900 dark:text-white">
                       {{ stats.totalSessions }}
                     </span>
-                    <span class="text-xl font-medium text-gray-700 dark:text-gray-300">次对话</span>
+                    <span class="text-xl font-medium text-gray-700 dark:text-gray-300">
+                      {{ t('views.relationship.hero.totalSessionsSuffix') }}
+                    </span>
                   </div>
 
                   <div class="flex items-baseline flex-wrap gap-x-1.5 gap-y-1">
-                    <span class="text-base font-medium text-gray-600 dark:text-gray-300">其中有</span>
+                    <span class="text-base font-medium text-gray-600 dark:text-gray-300">
+                      {{ t('views.relationship.hero.initiativePrefix') }}
+                    </span>
                     <span class="font-black text-3xl text-pink-500 dark:text-pink-400">
                       {{ overallInitiateRatio >= 50 ? overallInitiateRatio : 100 - overallInitiateRatio }}%
                     </span>
-                    <span class="text-base font-medium text-gray-600 dark:text-gray-300">的开场白由</span>
+                    <span class="text-base font-medium text-gray-600 dark:text-gray-300">
+                      {{ t('views.relationship.hero.initiativeByPrefix') }}
+                    </span>
                     <span class="font-bold text-xl text-gray-900 dark:text-white">
                       {{ overallInitiateRatio >= 50 ? memberA?.name : memberB?.name }}
                     </span>
-                    <span class="text-base font-medium text-gray-600 dark:text-gray-300">发起</span>
+                    <span class="text-base font-medium text-gray-600 dark:text-gray-300">
+                      {{ t('views.relationship.hero.initiativeBySuffix') }}
+                    </span>
                   </div>
                 </div>
 
@@ -376,7 +396,9 @@ function formatDuration(seconds: number): string {
                     <div class="mt-1 text-2xl font-black text-blue-500 dark:text-blue-400">
                       {{ memberA?.totalInitiateCount }}
                     </div>
-                    <div class="mt-0.5 text-[10px] font-medium text-gray-400">次发起</div>
+                    <div class="mt-0.5 text-[10px] font-medium text-gray-400">
+                      {{ t('views.relationship.hero.initiateTimes') }}
+                    </div>
                   </div>
 
                   <div
@@ -395,7 +417,9 @@ function formatDuration(seconds: number): string {
                     <div class="mt-1 text-2xl font-black text-pink-500 dark:text-pink-400">
                       {{ memberB?.totalInitiateCount }}
                     </div>
-                    <div class="mt-0.5 text-[10px] font-medium text-gray-400">次发起</div>
+                    <div class="mt-0.5 text-[10px] font-medium text-gray-400">
+                      {{ t('views.relationship.hero.initiateTimes') }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -422,7 +446,7 @@ function formatDuration(seconds: number): string {
           <!-- 2. 四个次要模块 (4 Secondary Modules) -->
           <div class="relative z-10 grid grid-cols-2 gap-3 p-4 pt-2 sm:p-6 sm:pt-2 lg:grid-cols-4">
             <RelationshipMetricCard
-              title="话题终结者"
+              :title="t('views.relationship.closerTitle')"
               icon-name="i-heroicons-hand-raised-solid"
               icon-bg-class="bg-blue-100 dark:bg-blue-500/20"
               icon-color-class="text-blue-600 dark:text-blue-400"
@@ -494,7 +518,9 @@ function formatDuration(seconds: number): string {
               <UIcon name="i-heroicons-chat-bubble-left-right-solid" class="h-3.5 w-3.5" />
               <span class="text-[10px] font-bold uppercase tracking-wider">ChatLab</span>
             </div>
-            <span class="text-[9px] font-medium uppercase tracking-widest">Relationship Report</span>
+            <span class="text-[9px] font-medium uppercase tracking-widest">
+              {{ t('views.relationship.watermarkReport') }}
+            </span>
           </div>
         </div>
       </div>
@@ -555,11 +581,17 @@ function formatDuration(seconds: number): string {
                         {{ getMonthLabel(month) }}
                       </span>
                     </div>
-                    
+
                     <div v-if="month.totalSessions > 0" class="flex items-baseline gap-1.5">
-                      <span class="text-xs font-medium text-gray-500 dark:text-gray-400">共对话</span>
-                      <span class="text-2xl font-black leading-none text-gray-900 dark:text-white">{{ month.totalSessions }}</span>
-                      <span class="text-xs font-medium text-gray-500 dark:text-gray-400">次</span>
+                      <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {{ t('views.relationship.monthly.totalSessionsPrefix') }}
+                      </span>
+                      <span class="text-2xl font-black leading-none text-gray-900 dark:text-white">
+                        {{ month.totalSessions }}
+                      </span>
+                      <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {{ t('views.relationship.monthly.totalSessionsSuffix') }}
+                      </span>
                     </div>
                   </div>
 
@@ -567,88 +599,163 @@ function formatDuration(seconds: number): string {
                     <!-- 内容区：四列高度压缩卡片网格 -->
                     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
                       <!-- 1. 发起者 -->
-                      <div class="flex flex-col rounded-xl bg-blue-50/50 p-3 ring-1 ring-blue-100/50 dark:bg-blue-500/5 dark:ring-blue-500/10">
+                      <div
+                        class="flex flex-col rounded-xl bg-blue-50/50 p-3 ring-1 ring-blue-100/50 dark:bg-blue-500/5 dark:ring-blue-500/10"
+                      >
                         <div class="mb-2.5 flex items-center gap-1.5">
-                          <UIcon name="i-heroicons-chat-bubble-bottom-center-text-solid" class="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
-                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ t('views.relationship.initiator') }}</span>
+                          <UIcon
+                            name="i-heroicons-chat-bubble-bottom-center-text-solid"
+                            class="h-3.5 w-3.5 text-blue-500 dark:text-blue-400"
+                          />
+                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                            {{ t('views.relationship.initiator') }}
+                          </span>
                         </div>
                         <div class="flex flex-col gap-1.5">
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberA?.name }}</span>
-                            <span class="font-black tabular-nums text-blue-600 dark:text-blue-400">{{ month.members.find(m => m.memberId === memberA?.memberId)?.initiateCount ?? 0 }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberA?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-blue-600 dark:text-blue-400">
+                              {{ month.members.find((m) => m.memberId === memberA?.memberId)?.initiateCount ?? 0 }}
+                            </span>
                           </div>
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberB?.name }}</span>
-                            <span class="font-black tabular-nums text-pink-500 dark:text-pink-400">{{ month.members.find(m => m.memberId === memberB?.memberId)?.initiateCount ?? 0 }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberB?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-pink-500 dark:text-pink-400">
+                              {{ month.members.find((m) => m.memberId === memberB?.memberId)?.initiateCount ?? 0 }}
+                            </span>
                           </div>
                         </div>
                         <div class="mt-3 flex h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                          <div class="bg-blue-500 dark:bg-blue-400" :style="{ width: clampBarWidth(getMonthInitiateRatio(month)) + '%' }" />
-                          <div class="bg-pink-500 dark:bg-pink-400" :style="{ width: clampBarWidth(100 - getMonthInitiateRatio(month)) + '%' }" />
+                          <div
+                            class="bg-blue-500 dark:bg-blue-400"
+                            :style="{ width: clampBarWidth(getMonthInitiateRatio(month)) + '%' }"
+                          />
+                          <div
+                            class="bg-pink-500 dark:bg-pink-400"
+                            :style="{ width: clampBarWidth(100 - getMonthInitiateRatio(month)) + '%' }"
+                          />
                         </div>
                       </div>
 
                       <!-- 2. 终结者 -->
-                      <div class="flex flex-col rounded-xl bg-indigo-50/50 p-3 ring-1 ring-indigo-100/50 dark:bg-indigo-500/5 dark:ring-indigo-500/10">
+                      <div
+                        class="flex flex-col rounded-xl bg-indigo-50/50 p-3 ring-1 ring-indigo-100/50 dark:bg-indigo-500/5 dark:ring-indigo-500/10"
+                      >
                         <div class="mb-2.5 flex items-center gap-1.5">
-                          <UIcon name="i-heroicons-hand-raised-solid" class="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
-                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ t('views.relationship.closer') }}</span>
+                          <UIcon
+                            name="i-heroicons-hand-raised-solid"
+                            class="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400"
+                          />
+                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                            {{ t('views.relationship.closer') }}
+                          </span>
                         </div>
                         <div class="flex flex-col gap-1.5">
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberA?.name }}</span>
-                            <span class="font-black tabular-nums text-indigo-600 dark:text-indigo-400">{{ month.members.find(m => m.memberId === memberA?.memberId)?.closeCount ?? 0 }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberA?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-indigo-600 dark:text-indigo-400">
+                              {{ month.members.find((m) => m.memberId === memberA?.memberId)?.closeCount ?? 0 }}
+                            </span>
                           </div>
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberB?.name }}</span>
-                            <span class="font-black tabular-nums text-pink-500 dark:text-pink-400">{{ month.members.find(m => m.memberId === memberB?.memberId)?.closeCount ?? 0 }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberB?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-pink-500 dark:text-pink-400">
+                              {{ month.members.find((m) => m.memberId === memberB?.memberId)?.closeCount ?? 0 }}
+                            </span>
                           </div>
                         </div>
                         <div class="mt-3 flex h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                          <div class="bg-indigo-500 dark:bg-indigo-400" :style="{ width: clampBarWidth(getMonthCloseRatio(month)) + '%' }" />
-                          <div class="bg-pink-500 dark:bg-pink-400" :style="{ width: clampBarWidth(100 - getMonthCloseRatio(month)) + '%' }" />
+                          <div
+                            class="bg-indigo-500 dark:bg-indigo-400"
+                            :style="{ width: clampBarWidth(getMonthCloseRatio(month)) + '%' }"
+                          />
+                          <div
+                            class="bg-pink-500 dark:bg-pink-400"
+                            :style="{ width: clampBarWidth(100 - getMonthCloseRatio(month)) + '%' }"
+                          />
                         </div>
                       </div>
 
                       <!-- 3. 响应时延 -->
-                      <div class="flex flex-col rounded-xl bg-amber-50/50 p-3 ring-1 ring-amber-100/50 dark:bg-amber-500/5 dark:ring-amber-500/10">
+                      <div
+                        class="flex flex-col rounded-xl bg-amber-50/50 p-3 ring-1 ring-amber-100/50 dark:bg-amber-500/5 dark:ring-amber-500/10"
+                      >
                         <div class="mb-2.5 flex items-center gap-1.5">
-                          <UIcon name="i-heroicons-clock-solid" class="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ t('views.relationship.responseLatency.title') }}</span>
+                          <UIcon
+                            name="i-heroicons-clock-solid"
+                            class="h-3.5 w-3.5 text-amber-500 dark:text-amber-400"
+                          />
+                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                            {{ t('views.relationship.responseLatency.title') }}
+                          </span>
                         </div>
                         <div class="flex flex-col gap-1.5">
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberA?.name }}</span>
-                            <span class="font-black tabular-nums text-amber-600 dark:text-amber-500">{{ getMemberResponseLatencyText(month.month, memberA?.memberId) }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberA?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-amber-600 dark:text-amber-500">
+                              {{ getMemberResponseLatencyText(month.month, memberA?.memberId) }}
+                            </span>
                           </div>
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberB?.name }}</span>
-                            <span class="font-black tabular-nums text-amber-600 dark:text-amber-500">{{ getMemberResponseLatencyText(month.month, memberB?.memberId) }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberB?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-amber-600 dark:text-amber-500">
+                              {{ getMemberResponseLatencyText(month.month, memberB?.memberId) }}
+                            </span>
                           </div>
                         </div>
                       </div>
 
                       <!-- 4. 锲而不舍 -->
-                      <div class="flex flex-col rounded-xl bg-purple-50/50 p-3 ring-1 ring-purple-100/50 dark:bg-purple-500/5 dark:ring-purple-500/10">
+                      <div
+                        class="flex flex-col rounded-xl bg-purple-50/50 p-3 ring-1 ring-purple-100/50 dark:bg-purple-500/5 dark:ring-purple-500/10"
+                      >
                         <div class="mb-2.5 flex items-center gap-1.5">
-                          <UIcon name="i-heroicons-arrow-path-solid" class="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
-                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">{{ t('views.relationship.perseverance.title') }}</span>
+                          <UIcon
+                            name="i-heroicons-arrow-path-solid"
+                            class="h-3.5 w-3.5 text-purple-500 dark:text-purple-400"
+                          />
+                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                            {{ t('views.relationship.perseverance.title') }}
+                          </span>
                         </div>
                         <div class="flex flex-col gap-1.5">
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberA?.name }}</span>
-                            <span class="font-black tabular-nums text-purple-600 dark:text-purple-400">{{ getMemberPerseveranceText(month.month, memberA?.memberId) }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberA?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-purple-600 dark:text-purple-400">
+                              {{ getMemberPerseveranceText(month.month, memberA?.memberId) }}
+                            </span>
                           </div>
                           <div class="flex items-center justify-between text-xs">
-                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">{{ memberB?.name }}</span>
-                            <span class="font-black tabular-nums text-purple-600 dark:text-purple-400">{{ getMemberPerseveranceText(month.month, memberB?.memberId) }}</span>
+                            <span class="w-12 truncate font-medium text-gray-500 dark:text-gray-400">
+                              {{ memberB?.name }}
+                            </span>
+                            <span class="font-black tabular-nums text-purple-600 dark:text-purple-400">
+                              {{ getMemberPerseveranceText(month.month, memberB?.memberId) }}
+                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </template>
-                  
-                  <div v-else class="flex h-24 items-center justify-center text-sm font-medium text-gray-400 dark:text-gray-500">
+
+                  <div
+                    v-else
+                    class="flex h-24 items-center justify-center text-sm font-medium text-gray-400 dark:text-gray-500"
+                  >
                     {{ t('views.relationship.noActivity') }}
                   </div>
                 </div>

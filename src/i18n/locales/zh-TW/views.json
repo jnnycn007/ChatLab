@@ -69,21 +69,39 @@
       "title": "整體概覽"
     },
     "monthly": {
-      "title": "月度明細"
+      "title": "月度明細",
+      "totalSessionsPrefix": "共對話",
+      "totalSessionsSuffix": "次"
     },
     "trend": {
       "title": "主動性趨勢",
       "hint": "藍色線為 {name} 的月度主動發起佔比，50% 線為均衡基準"
     },
+    "hero": {
+      "monthPart": "{year}年{month}月",
+      "timeRange": {
+        "singleMonth": "在 {month} 期間，",
+        "range": "在 {start} 至 {end} 期間，"
+      },
+      "totalSessionsPrefix": "你們共進行了",
+      "totalSessionsSuffix": "次對話",
+      "initiativePrefix": "其中有",
+      "initiativeByPrefix": "的開場白由",
+      "initiativeBySuffix": "發起",
+      "initiateTimes": "次發起"
+    },
     "initiator": "發起話題",
     "closer": "結束話題",
+    "closerTitle": "話題終結者",
     "closerHint": "統計話題結束時最後發言的人。",
     "initiated": "發起 {count} 次",
     "closed": "結束 {count} 次",
     "totalSessions": "共 {count} 次對話",
     "times": "次",
     "noActivity": "本月無互動",
+    "watermarkReport": "關係報告",
     "monthFormat": "{year}年{month}月",
+    "monthShortFormat": "{month}月",
     "monthDetail": "發起 {init} / 結束 {close}",
     "iceBreaker": {
       "title": "破冰達人",

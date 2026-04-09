@@ -69,21 +69,39 @@
       "title": "Overall Summary"
     },
     "monthly": {
-      "title": "Monthly Breakdown"
+      "title": "Monthly Breakdown",
+      "totalSessionsPrefix": "Total",
+      "totalSessionsSuffix": "sessions"
     },
     "trend": {
       "title": "Initiative Trend",
       "hint": "Blue line shows {name}'s monthly initiative ratio; 50% line is the balanced baseline"
     },
+    "hero": {
+      "monthPart": "{month}/{year}",
+      "timeRange": {
+        "singleMonth": "In {month},",
+        "range": "From {start} to {end},"
+      },
+      "totalSessionsPrefix": "You had",
+      "totalSessionsSuffix": "conversations in total",
+      "initiativePrefix": "",
+      "initiativeByPrefix": "of opening messages were started by",
+      "initiativeBySuffix": "",
+      "initiateTimes": "starts"
+    },
     "initiator": "Start Conversations",
     "closer": "End Conversations",
+    "closerTitle": "Conversation Closer",
     "closerHint": "Shows who sends the last message when a topic ends.",
     "initiated": "Initiated {count} times",
     "closed": "Closed {count} times",
     "totalSessions": "{count} total sessions",
     "times": " times",
     "noActivity": "No activity this month",
+    "watermarkReport": "Relationship Report",
     "monthFormat": "{month}/{year}",
+    "monthShortFormat": "{month}",
     "monthDetail": "Init {init} / Close {close}",
     "iceBreaker": {
       "title": "Ice Breaker",
