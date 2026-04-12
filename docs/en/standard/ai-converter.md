@@ -8,7 +8,7 @@ If your chat record format (such as CSV, HTML, TXT, or other database exports) i
 
 ## Preparation
 
-1. **Download the standard specification**: <a href="/en/docs/chatlab-format.md" download="chatlab-format.md">Click to download ChatLab Standard Format Specification v0.0.1 (.md)</a>
+1. **View the standard specification**: [ChatLab Standard Format Specification v0.0.1](./chatlab-format.md)
 2. **Prepare your data**: Have your exported original chat record file ready (if using online services, we recommend providing only a few hundred anonymized samples).
 
 ## Choose Target Format

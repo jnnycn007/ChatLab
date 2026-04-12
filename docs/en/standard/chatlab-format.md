@@ -8,8 +8,6 @@ ChatLab defines a standard chat record data exchange format to support unified i
 
 As long as you convert your chat records to this format, ChatLab can parse and analyze them.
 
-<a href="/en/docs/chatlab-format.md" download="chatlab-format.md">📥 Click here to download this specification (.md)</a>
-
 ::: warning Notice
 This format specification is still in its early development stage. Some fields and structures may be adjusted in future versions.
 :::

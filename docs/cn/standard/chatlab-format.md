@@ -2,8 +2,6 @@
 outline: deep
 ---
 
-<a href="/cn/docs/chatlab-format.md" download="chatlab-format.md">📥 点击此处下载本规范文档 (.md)</a>
-
 # 聊天数据交换标准化格式
 
 > v0.0.2

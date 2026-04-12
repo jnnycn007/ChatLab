@@ -8,7 +8,7 @@ outline: deep
 
 ## 准备工作
 
-1.  **下载标准规范**：<a href="/cn/docs/chatlab-format.md" download="chatlab-format.md">点击下载 ChatLab 标准格式规范 v0.0.2 (.md)</a>
+1.  **查看标准规范**：[ChatLab 标准格式规范 v0.0.2](./chatlab-format.md)
 2.  **准备数据**：准备好你导出的原始聊天记录文件（如果是在线服务，建议仅提供几百条脱敏后的样本即可）。
 
 ## 选择目标格式
