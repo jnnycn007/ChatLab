@@ -276,8 +276,8 @@ jobs:
           echo "Current version: $CURRENT_VERSION"
 
           # 从 changelog JSON 中提取最新版本的 summary
-          EN_SUMMARY=$(jq -r '.[0].summary' docs/changelogs_en.json)
-          CN_SUMMARY=$(jq -r '.[0].summary' docs/changelogs_cn.json)
+          EN_SUMMARY=$(jq -r '.[0].summary' docs/public/changelogs/en.json)
+          CN_SUMMARY=$(jq -r '.[0].summary' docs/public/changelogs/cn.json)
 
           echo "EN summary: $EN_SUMMARY"
           echo "CN summary: $CN_SUMMARY"
@@ -294,7 +294,7 @@ jobs:
             echo ""
             echo "---"
             echo ""
-            echo "Full Changelog: [English](https://github.com/hellodigua/ChatLab/blob/main/docs/changelogs_en.json) | [中文](https://github.com/hellodigua/ChatLab/blob/main/docs/changelogs_cn.json) | [日本語](https://github.com/hellodigua/ChatLab/blob/main/docs/changelogs_ja.json)"
+            echo "Full Changelog: [English](https://github.com/hellodigua/ChatLab/blob/main/docs/public/changelogs/en.json) | [中文](https://github.com/hellodigua/ChatLab/blob/main/docs/public/changelogs/cn.json) | [日本語](https://github.com/hellodigua/ChatLab/blob/main/docs/public/changelogs/ja.json)"
             echo ""
             echo "---"
             echo ""

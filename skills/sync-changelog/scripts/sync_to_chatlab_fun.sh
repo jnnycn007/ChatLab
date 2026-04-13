@@ -11,14 +11,14 @@ if [[ -z "$SOURCE_REPO" || -z "$TARGET_REPO" ]]; then
   exit 1
 fi
 
-SRC_CN="$SOURCE_REPO/docs/changelogs_cn.json"
-SRC_EN="$SOURCE_REPO/docs/changelogs_en.json"
-SRC_TW="$SOURCE_REPO/docs/changelogs_tw.json"
-SRC_JA="$SOURCE_REPO/docs/changelogs_ja.json"
-DST_CN="$TARGET_REPO/docs/public/cn/changelogs.json"
-DST_EN="$TARGET_REPO/docs/public/en/changelogs.json"
-DST_TW="$TARGET_REPO/docs/public/tw/changelogs.json"
-DST_JA="$TARGET_REPO/docs/public/ja/changelogs.json"
+SRC_CN="$SOURCE_REPO/docs/public/changelogs/cn.json"
+SRC_EN="$SOURCE_REPO/docs/public/changelogs/en.json"
+SRC_TW="$SOURCE_REPO/docs/public/changelogs/tw.json"
+SRC_JA="$SOURCE_REPO/docs/public/changelogs/ja.json"
+DST_CN="$TARGET_REPO/public/cn/changelogs.json"
+DST_EN="$TARGET_REPO/public/en/changelogs.json"
+DST_TW="$TARGET_REPO/public/tw/changelogs.json"
+DST_JA="$TARGET_REPO/public/ja/changelogs.json"
 
 # 目标文件必须预先存在，不允许自动创建。
 if [[ ! -f "$DST_CN" || ! -f "$DST_EN" || ! -f "$DST_TW" || ! -f "$DST_JA" ]]; then
@@ -38,10 +38,10 @@ cp "$SRC_JA" "$DST_JA"
 
 # 仅提交目标文档文件，避免提交其他改动。
 git -C "$TARGET_REPO" add \
-  docs/public/cn/changelogs.json \
-  docs/public/en/changelogs.json \
-  docs/public/tw/changelogs.json \
-  docs/public/ja/changelogs.json
+  public/cn/changelogs.json \
+  public/en/changelogs.json \
+  public/tw/changelogs.json \
+  public/ja/changelogs.json
 
 if git -C "$TARGET_REPO" diff --cached --quiet; then
   echo "错误: chatlab.fun 没有可提交的 changelog 变更" >&2
