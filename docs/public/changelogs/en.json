@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.18.1",
+    "date": "2026-04-24",
+    "summary": "This release adds DeepSeek V4 support and a launch-at-startup option, improves the settings and overall UI experience, and fixes how links open in AI chat.<br/>Starting with this release, the project is officially moving to the ChatLab organization.",
+    "changes": [
+      {
+        "type": "feat",
+        "items": [
+          "Move the project to the ChatLab organization.",
+          "Refine the global visual style.",
+          "Improve how quick prompts are presented.",
+          "Improve how the settings modal opens.",
+          "Add launch-at-startup support.",
+          "Add support for the DeepSeek V4 model."
+        ]
+      },
+      {
+        "type": "fix",
+        "items": ["Fix links in AI chat so they open in the browser."]
+      }
+    ]
+  },
+  {
     "version": "0.18.0",
     "date": "2026-04-23",
     "summary": "This release improves AI chat interactions, consolidates several analysis entry points, and makes data source sync and Windows updates more reliable.",
